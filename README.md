@@ -1,14 +1,14 @@
 # raspberry-motion-kvs-streamer
 
-A demo program showing how to produce Kinesis Video Stream in Golang using a gstreamer pipeline, on a raspberry. It can be controlled through a flag in the *AWS IoT shadow* state or by a pin, controlled by a PIR motion sensor.
+A demo program showing how to produce Kinesis Video Stream in Golang using a gstreamer pipeline, on a raspberry. It can be controlled through a flag in the *AWS IoT shadow* state or by a pin, connected to a PIR motion sensor.
 
 ### Pre requirements
 
 To build and test you need a raspberry with a working camera. You also need **gstreamer** and  **kvssink** gstreamer plugin from [https://github.com/awslabs/amazon-kinesis-video-streams-producer-sdk-cpp](https://github.com/awslabs/amazon-kinesis-video-streams-producer-sdk-cpp).
 Unless you are cross compiling you need Go for raspberry, which may be downloaded from [https://golang.org/dl/](https://golang.org/dl/) .
 
-You also need an AWS account where you have created a **Kinesis Video Stream** . I suggest you create a separate user on your AWS account for the streamer, with very limited permissions , and no consol access.
-Since you will be using AWS IoT Core , you need to create a device and it's keys.
+You also need an AWS account where you have created a **Kinesis Video Stream** . I suggest you create a separate IAM user on your AWS account for the streamer, with very limited permissions, and no consol access.
+Since you will be using AWS IoT Core, you need to create a device and its keys there as well.
 
 ### Environment variables
 
@@ -30,7 +30,7 @@ The variables may be set using a .env file, or set/exported from your shell.
 
 ### Verify your environment
 
-To verify that your streaming environment, try the following gstreamer pipeline: 
+To verify your streaming environment, try the following gstreamer pipeline: 
 
 <pre>
 gst-launch-1.0  v4l2src do-timestamp=TRUE device=/dev/video0 !
@@ -50,15 +50,16 @@ You should be able to view your video live on the AWS Console under Kinesis Vide
 
 go build motion-kvs-streamer.go shortprettydump.go <br/>
 It may take a while on a pi zero.
+Copy the .env.sample to .env and edit it to match your settings.
 
 ### Try it
 
 As root , set the environment variables or make sure the .env file is correct.
 Then run the binary i.e. **./motion-kvs-streamer**
 
-*Optionally* connect a standard PIR motion sensor to +5V  , Gnd and pin 18 on your pi and start moving around. It's safe to use the +5V because the PIR sensor has a built in 3.3v regulator. If in doubt , verify your brand/model.
+*Optionally* connect a standard PIR motion sensor to +5V  , Gnd and pin 18 on your pi and start moving around. It's safe to use the +5V because the most common PIR sensors have built in 3.3v regulator. If in doubt, verify your brand/model.
 
-If you don't have a PIR motion detector connected you can start the camera by setting the shadow flag *Camera* to 1 , in the AWS Console -> AWS IoT -> Manage -> Things -> your-thing-name -> Device Shadows -> Classic Shadow -> Edit button and paste
+If you don't want to use a PIR motion detector you can start the camera by setting the shadow flag *Camera* to 1 , in the AWS Console -> AWS IoT -> Manage -> Things -> your-thing-name -> Device Shadows -> Classic Shadow -> Edit button and paste
 
 <pre>
 {
@@ -94,5 +95,10 @@ systemctl status kvsstreamer
 The code is heavily based on [https://github.com/seqsense/aws-iot-device-sdk-go](https://github.com/seqsense/aws-iot-device-sdk-go) and the shadow example. The file **shortprettydump.go**  is a straight copy from that example. [github.com/ziutek/gst](github.com/ziutek/gst) is used for gstreamer stuff. There are other maintained libraries for gstreamer, but I found this one to compile without problems on my pi zero. 
 
 The code is a bit messy with a bunch of flags, mainly because I wanted to have the stream start quickly on motion, and then run for a limited time. Plus I wanted to have it stay as quiet as possible over the network when there is no activity. My real-world use case is using a 4G Cell connection causing those requirements.
+
+### Kudos
+
+Obviously to [SEQSENSE](https://github.com/seqsense/aws-iot-device-sdk-go) and [ziutek](https://github.com/ziutek/gst) . I may have copied lines from other projects as well. If you feel you have contributed without due credits please let me know.
+
 
 
