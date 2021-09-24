@@ -1,0 +1,16 @@
+[Unit]
+Description=Amazon AWS Kinesis Video Stream Camera
+After=network.target
+
+[Service]
+EnvironmentFile=/home/pi/Develop/IoT/go/.env
+WorkingDirectory=/home/pi/Develop/IoT/go
+ExecStart=/home/pi/Develop/IoT/go/motion-kvs-streamer
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+RestartPreventExitStatus=255
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
