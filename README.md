@@ -98,7 +98,7 @@ The code is a bit messy with a bunch of flags, mainly because I wanted to have t
 
 ### Kudos
 
-Obviously to [SEQSENSE](https://github.com/seqsense/aws-iot-device-sdk-go) and [ziutek](https://github.com/ziutek/gst) . I may have copied lines from other projects as well. If you feel you have contributed without due credits please let me know.
+Obviously to [SEQSENSE](https://github.com/seqsense/aws-iot-device-sdk-go) and [ziutek](https://github.com/ziutek/gst) . I may have copied lines from other projects as well. If you feel you have contributed without due credit please let me know.
 
 
 
