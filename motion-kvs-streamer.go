@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -5,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"time"
+	"reflect"
 	"github.com/ziutek/glib"
 	"github.com/ziutek/gst"
 	"github.com/joho/godotenv"
@@ -151,6 +153,17 @@ func main() {
 		panic(err)
 	}
 
+
+	// state flags
+	
+	loopState := loopStateType{
+		reportTime: 1,
+		prevCamState: 0,
+		prevMotionState: 0,
+		motionTrigger: 0,
+		safeCounter: 0,
+	}
+
 	// Multiplex message handler to route messages to multiple features.
 	var mux mqtt.ServeMux
 	cli.Handle(&mux)
@@ -163,7 +176,31 @@ func main() {
 		fmt.Printf("async error: %v\n", err)
 	})
 	s.OnDelta(func(delta shadow.NestedState) {
-		fmt.Printf("delta:%s", prettyDump(delta))
+		go func() {
+			// fmt.Printf("\ndelta:\n..............\n%s\n...........\n", prettyDump(delta))
+			if (delta["Camera"] != nil) {
+				cam := reflect.ValueOf(delta["Camera"]).Float()
+				
+				if cam > 0.1 {
+					// fmt.Printf("\nSHADOW START PLAYING!!\n",)
+					pl.SetState(gst.STATE_PLAYING)
+					loopState.safeCounter = 0
+					_, err := s.Report(ctx, sampleState{Camera: 1})
+					if err != nil {
+						panic(err)
+					}
+				
+				} else {
+					// fmt.Printf("\nSHADOW STOP PLAYING!!\n",)
+					pl.SetState(gst.STATE_PAUSED)
+					loopState.safeCounter = 0
+					_, err := s.Report(ctx, sampleState{Camera: 0})
+					if err != nil {
+						panic(err)
+					}
+				}
+			}
+		}()
 	})
 	mux.Handle("#", s) // Handle messages for Shadow.
 
@@ -187,21 +224,7 @@ func main() {
 	fmt.Printf("document:%s", prettyDump(doc))
 
 	time.Sleep(time.Second)
-
-	loopState := loopStateType{
-		reportTime: 1,
-		prevCamState: 0,
-		prevMotionState: 0,
-		motionTrigger: 0,
-		safeCounter: 0,
-	}
-
-	//	reportTime := 1
-	//	prevCamState := 0
-	//	var prevMotionState rpio.State = 0
-	//	motionTrigger := 0
-	//	safeCounter := 0
-
+	
 	motionPin := rpio.Pin(18)
 	motionPin.Input()       // Intput mode
 
@@ -251,8 +274,8 @@ func main() {
 				time.Sleep(time.Second)
 			}
 
-
 			if (typedState.Camera>loopState.prevCamState) {
+				fmt.Printf("\nSTART PLAYING!!\n",)
 				pl.SetState(gst.STATE_PLAYING)
 				loopState.safeCounter = 0
 			} else if (typedState.Camera<loopState.prevCamState) {
@@ -263,8 +286,9 @@ func main() {
 			loopState.prevCamState = typedState.Camera
 
 			if (typedState.Camera>0) {
+				fmt.Printf("\n\n\nCHECK SAFECOUNTER %d \n\n",loopState.safeCounter)
 				loopState.safeCounter += 1
-				if (loopState.safeCounter>10) {
+				if (loopState.safeCounter>3) {
 					_, err := s.Desire(ctx, sampleState{Camera: 0, Motion: 0 })
 					if err != nil {
 						panic(err)
